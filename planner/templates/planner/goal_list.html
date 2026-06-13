@@ -1,0 +1,80 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Goals | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="page-header">
+    <div>
+      <p class="eyebrow">Learning goals</p>
+      <h1>Your goals</h1>
+      <p>Track each private learning plan from first idea to finished practice.</p>
+    </div>
+    <a class="button" href="{% url 'goal_create' %}">New goal</a>
+  </section>
+
+  <section class="panel full-panel">
+    <form class="filter-form" method="get">
+      <div class="form-field">
+        <label for="goal-search">Search</label>
+        <input id="goal-search" type="search" name="q" value="{{ search_query }}" placeholder="Title, category, or description">
+      </div>
+      <div class="form-field">
+        <label for="goal-status">Status</label>
+        <select id="goal-status" name="status">
+          <option value="">Any status</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="goal-priority">Priority</label>
+        <select id="goal-priority" name="priority">
+          <option value="">Any priority</option>
+          {% for value, label in priority_choices %}
+            <option value="{{ value }}"{% if priority_filter == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit">Apply</button>
+        <a class="button button-secondary" href="{% url 'goal_list' %}">Reset</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="goal-grid" aria-label="Goal results">
+    {% for goal in goals %}
+      <article class="card goal-card">
+        <div class="card-meta">
+          <span>{{ goal.get_status_display }}</span>
+          <span>{{ goal.get_priority_display }}</span>
+        </div>
+        <h2><a href="{% url 'goal_detail' goal.id %}">{{ goal.title }}</a></h2>
+        {% if goal.category %}
+          <p class="goal-category">{{ goal.category }}</p>
+        {% endif %}
+        {% if goal.description %}
+          <p>{{ goal.description|truncatewords:24 }}</p>
+        {% else %}
+          <p>No description yet.</p>
+        {% endif %}
+        <div class="progress-summary" aria-label="Goal progress">
+          <div class="progress-bar">
+            <span style="width: {{ goal.progress_percentage }}%"></span>
+          </div>
+          <strong>{{ goal.progress_percentage }}%</strong>
+        </div>
+        <div class="actions">
+          <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">View</a>
+          <a class="button button-secondary" href="{% url 'goal_edit' goal.id %}">Edit</a>
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty-state">
+        No goals match this view.
+        <a href="{% url 'goal_create' %}">Create your first goal</a>.
+      </div>
+    {% endfor %}
+  </section>
+{% endblock %}

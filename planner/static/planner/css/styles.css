@@ -397,6 +397,115 @@ p {
   margin-top: var(--space-2);
 }
 
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.full-panel {
+  max-width: none;
+}
+
+.filter-form {
+  display: grid;
+  align-items: end;
+  grid-template-columns: minmax(16rem, 1fr) minmax(10rem, 13rem) minmax(10rem, 13rem) auto;
+  gap: var(--space-2);
+}
+
+.filter-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.goal-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.goal-card h2 {
+  margin-bottom: 0;
+  font-size: 1.25rem;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.goal-category,
+.muted {
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.progress-summary {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.progress-large {
+  margin-block: var(--space-2);
+}
+
+.progress-bar {
+  overflow: hidden;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: #e8edf5;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.detail-layout {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.item-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding-left: 1.25rem;
+}
+
 .eyebrow {
   margin: 0 0 var(--space-1);
   color: var(--color-muted);
@@ -482,6 +591,27 @@ p {
 
   .actions,
   .actions .button {
+    width: 100%;
+  }
+
+  .page-header,
+  .filter-form,
+  .form-grid,
+  .section-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header,
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+  }
+
+  .filter-actions .button {
     width: 100%;
   }
 

@@ -1,0 +1,90 @@
+{% extends "planner/base.html" %}
+
+{% block title %}{{ goal.title }} | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="page-header">
+    <div>
+      <p class="eyebrow">Goal detail</p>
+      <h1>{{ goal.title }}</h1>
+      <p>
+        {{ goal.get_status_display }} &middot; {{ goal.get_priority_display }}
+        {% if goal.category %} &middot; {{ goal.category }}{% endif %}
+        {% if goal.target_date %} &middot; Target {{ goal.target_date }}{% endif %}
+      </p>
+    </div>
+    <div class="actions">
+      <a class="button button-secondary" href="{% url 'goal_edit' goal.id %}">Edit</a>
+      <a class="button button-danger" href="{% url 'goal_delete' goal.id %}">Delete</a>
+    </div>
+  </section>
+
+  <section class="detail-layout">
+    <article class="panel full-panel">
+      <h2>Progress</h2>
+      {% if goal.description %}
+        <p>{{ goal.description }}</p>
+      {% else %}
+        <p>No description yet.</p>
+      {% endif %}
+      <div class="progress-summary progress-large" aria-label="Goal progress">
+        <div class="progress-bar">
+          <span style="width: {{ goal.progress_percentage }}%"></span>
+        </div>
+        <strong>{{ goal.progress_percentage }}%</strong>
+      </div>
+      <p>
+        {{ goal.completed_milestones_count }} of {{ goal.total_milestones_count }}
+        milestones complete.
+      </p>
+    </article>
+
+    <article class="panel full-panel">
+      <div class="section-heading">
+        <h2>Milestones</h2>
+        <span class="muted">Phase 6</span>
+      </div>
+      {% if goal.milestones.all %}
+        <ul class="item-list">
+          {% for milestone in goal.milestones.all %}
+            <li>{{ milestone.title }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">Milestones will appear here after the milestone phase.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full-panel">
+      <div class="section-heading">
+        <h2>Practice sessions</h2>
+        <span class="muted">Phase 7</span>
+      </div>
+      {% if goal.practice_sessions.all %}
+        <ul class="item-list">
+          {% for session in goal.practice_sessions.all %}
+            <li>{{ session.scheduled_for }} &middot; {{ session.get_status_display }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">Practice sessions will appear here after the session phase.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full-panel">
+      <div class="section-heading">
+        <h2>Progress notes</h2>
+        <span class="muted">Phase 8</span>
+      </div>
+      {% if goal.progress_notes.all %}
+        <ul class="item-list">
+          {% for note in goal.progress_notes.all %}
+            <li>{{ note.body|truncatewords:18 }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">Progress notes will appear here after the notes phase.</div>
+      {% endif %}
+    </article>
+  </section>
+{% endblock %}
