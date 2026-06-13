@@ -1,0 +1,27 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SkillSprint{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'planner/css/styles.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="container site-nav" aria-label="Primary navigation">
+      <a class="brand" href="{% url 'landing' %}">SkillSprint</a>
+      <div class="nav-links">
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="{% url 'login' %}">Log in</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+  <main class="container page">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
