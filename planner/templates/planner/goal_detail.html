@@ -90,16 +90,46 @@
     <article class="panel full-panel">
       <div class="section-heading">
         <h2>Practice sessions</h2>
-        <span class="muted">Phase 7</span>
+        <a class="button button-secondary" href="{% url 'goal_session_create' goal.id %}">Add session</a>
       </div>
       {% if goal.practice_sessions.all %}
-        <ul class="item-list">
+        <ul class="session-list">
           {% for session in goal.practice_sessions.all %}
-            <li>{{ session.scheduled_for }} &middot; {{ session.get_status_display }}</li>
+            <li class="session-item" data-session-id="{{ session.id }}">
+              <div>
+                <h3>{{ session.scheduled_for|date:"M j, Y, g:i A" }}</h3>
+                <p class="muted">
+                  {{ session.duration_minutes }} minutes &middot;
+                  <span data-session-status-label>{{ session.get_status_display }}</span>
+                  {% if session.milestone %} &middot; {{ session.milestone.title }}{% endif %}
+                </p>
+                {% if session.notes %}
+                  <p>{{ session.notes }}</p>
+                {% endif %}
+              </div>
+              <div class="session-actions">
+                <form method="post" action="{% url 'api_session_status' session.id %}" data-session-status-form>
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="COMPLETED">
+                  <button class="button-secondary" type="submit">Complete</button>
+                </form>
+                <form method="post" action="{% url 'api_session_status' session.id %}" data-session-status-form>
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="SKIPPED">
+                  <button class="button-secondary" type="submit">Skip</button>
+                </form>
+                <a class="button button-secondary" href="{% url 'session_edit' session.id %}">Edit</a>
+                <a class="button button-danger" href="{% url 'session_delete' session.id %}">Delete</a>
+              </div>
+            </li>
           {% endfor %}
         </ul>
+        <div class="error-state session-error" data-session-error hidden></div>
       {% else %}
-        <div class="empty-state">Practice sessions will appear here after the session phase.</div>
+        <div class="empty-state">
+          No practice sessions yet.
+          <a href="{% url 'goal_session_create' goal.id %}">Schedule the first session</a>.
+        </div>
       {% endif %}
     </article>
 
@@ -122,5 +152,6 @@
 {% endblock %}
 
 {% block scripts %}
+  <script src="{% static 'planner/js/dashboard.js' %}" defer></script>
   <script src="{% static 'planner/js/goal_detail.js' %}" defer></script>
 {% endblock %}

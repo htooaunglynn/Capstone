@@ -1,10 +1,95 @@
 {% extends "planner/base.html" %}
+{% load static %}
 
 {% block title %}Dashboard | SkillSprint{% endblock %}
 
 {% block content %}
-  <section class="panel">
-    <h1>Dashboard</h1>
-    <p>Your learning activity summary will appear here in a later phase.</p>
+  <section class="page-header">
+    <div>
+      <p class="eyebrow">Dashboard</p>
+      <h1>Learning overview</h1>
+      <p>Your active goals and next practice sessions.</p>
+    </div>
+    <div class="actions">
+      <a class="button" href="{% url 'goal_create' %}">Add goal</a>
+      <a class="button button-secondary" href="{% url 'session_create' %}">Add session</a>
+    </div>
   </section>
+
+  <section class="dashboard-grid" aria-label="Dashboard summary">
+    <article class="card summary-card">
+      <span class="muted">Active goals</span>
+      <strong>{{ active_goals_count }}</strong>
+    </article>
+    <article class="card summary-card">
+      <span class="muted">Upcoming sessions</span>
+      <strong data-upcoming-sessions-count>{{ upcoming_sessions_count }}</strong>
+    </article>
+    <article class="card summary-card">
+      <span class="muted">Completed sessions</span>
+      <strong data-completed-sessions-count>{{ completed_sessions_count }}</strong>
+    </article>
+    <article class="card summary-card">
+      <span class="muted">Overdue milestones</span>
+      <strong>{{ overdue_milestones_count }}</strong>
+    </article>
+  </section>
+
+  <section class="detail-layout dashboard-sections">
+    <article class="panel full-panel">
+      <div class="section-heading">
+        <h2>Upcoming practice sessions</h2>
+        <a class="button button-secondary" href="{% url 'session_list' %}">View all</a>
+      </div>
+      {% if upcoming_sessions %}
+        <ul class="session-list">
+          {% for session in upcoming_sessions %}
+            <li class="session-item" data-session-id="{{ session.id }}">
+              <div>
+                <h3>{{ session.scheduled_for|date:"M j, Y, g:i A" }}</h3>
+                <p class="muted">
+                  {{ session.goal.title }} &middot; {{ session.duration_minutes }} minutes &middot;
+                  <span data-session-status-label>{{ session.get_status_display }}</span>
+                  {% if session.milestone %} &middot; {{ session.milestone.title }}{% endif %}
+                </p>
+              </div>
+              <div class="session-actions">
+                <form method="post" action="{% url 'api_session_status' session.id %}" data-session-status-form>
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="COMPLETED">
+                  <button class="button-secondary" type="submit">Complete</button>
+                </form>
+                <form method="post" action="{% url 'api_session_status' session.id %}" data-session-status-form>
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="SKIPPED">
+                  <button class="button-secondary" type="submit">Skip</button>
+                </form>
+                <a class="button button-secondary" href="{% url 'session_edit' session.id %}">Edit</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="error-state session-error" data-session-error hidden></div>
+      {% else %}
+        <div class="empty-state">No upcoming practice sessions.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full-panel">
+      <h2>Active goals</h2>
+      {% if active_goals %}
+        <ul class="item-list">
+          {% for goal in active_goals %}
+            <li><a href="{% url 'goal_detail' goal.id %}">{{ goal.title }}</a> &middot; {{ goal.progress_percentage }}%</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">No active goals yet.</div>
+      {% endif %}
+    </article>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'planner/js/dashboard.js' %}" defer></script>
 {% endblock %}

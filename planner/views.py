@@ -14,8 +14,8 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .forms import GoalForm, MilestoneForm, RegisterForm
-from .models import Goal, GoalStatus, Milestone, Priority
+from .forms import GoalForm, MilestoneForm, PracticeSessionForm, RegisterForm
+from .models import Goal, GoalStatus, Milestone, PracticeSession, Priority, SessionStatus
 from .serializers import (
     LoginSerializer,
     LogoutSerializer,
@@ -25,7 +25,7 @@ from .serializers import (
     token_payload,
     user_payload,
 )
-from .services import calculate_goal_progress
+from .services import calculate_goal_progress, dashboard_session_summary
 
 
 def landing(request):
@@ -63,7 +63,7 @@ def logout_page(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'planner/dashboard.html')
+    return render(request, 'planner/dashboard.html', dashboard_session_summary(request.user))
 
 
 @login_required
@@ -191,6 +191,102 @@ def milestone_delete(request, milestone_id):
 
 
 @login_required
+def session_list(request):
+    sessions = (
+        PracticeSession.objects
+        .select_related('goal', 'milestone')
+        .filter(user=request.user)
+        .order_by('scheduled_for')
+    )
+    return render(request, 'planner/session_list.html', {'sessions': sessions})
+
+
+@login_required
+def session_create(request, goal_id=None):
+    goal = None
+    if goal_id is not None:
+        goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+
+    if request.method == 'POST':
+        form = PracticeSessionForm(request.POST, user=request.user, goal=goal)
+        if form.is_valid():
+            practice_session = form.save(commit=False)
+            practice_session.user = request.user
+            practice_session.goal = form.cleaned_data['goal']
+            practice_session.full_clean()
+            practice_session.save()
+            messages.success(request, 'Practice session created.')
+            return redirect('goal_detail', goal_id=practice_session.goal_id)
+    else:
+        form = PracticeSessionForm(user=request.user, goal=goal)
+
+    return render(
+        request,
+        'planner/session_form.html',
+        {
+            'form': form,
+            'goal': goal,
+            'title': 'Schedule practice session',
+            'submit_label': 'Schedule session',
+        },
+    )
+
+
+@login_required
+def session_edit(request, session_id):
+    practice_session = get_object_or_404(
+        PracticeSession.objects.select_related('goal', 'milestone'),
+        id=session_id,
+        user=request.user,
+    )
+
+    if request.method == 'POST':
+        form = PracticeSessionForm(request.POST, instance=practice_session, user=request.user)
+        if form.is_valid():
+            practice_session = form.save(commit=False)
+            practice_session.user = request.user
+            practice_session.full_clean()
+            practice_session.save()
+            messages.success(request, 'Practice session updated.')
+            return redirect('goal_detail', goal_id=practice_session.goal_id)
+    else:
+        form = PracticeSessionForm(instance=practice_session, user=request.user)
+
+    return render(
+        request,
+        'planner/session_form.html',
+        {
+            'form': form,
+            'goal': practice_session.goal,
+            'practice_session': practice_session,
+            'title': 'Edit practice session',
+            'submit_label': 'Save changes',
+        },
+    )
+
+
+@login_required
+def session_delete(request, session_id):
+    practice_session = get_object_or_404(
+        PracticeSession.objects.select_related('goal'),
+        id=session_id,
+        user=request.user,
+    )
+    goal = practice_session.goal
+
+    if request.method == 'POST':
+        practice_session.delete()
+        messages.success(request, 'Practice session deleted.')
+        return redirect('goal_detail', goal_id=goal.id)
+
+    return render(
+        request,
+        'planner/session_confirm_delete.html',
+        {'goal': goal, 'practice_session': practice_session},
+    )
+
+
+@login_required
 def goal_create(request):
     if request.method == 'POST':
         form = GoalForm(request.POST)
@@ -313,6 +409,20 @@ def milestone_payload(milestone):
     }
 
 
+def session_payload(practice_session):
+    return {
+        'id': practice_session.id,
+        'goal_id': practice_session.goal_id,
+        'milestone_id': practice_session.milestone_id,
+        'scheduled_for': practice_session.scheduled_for.isoformat(),
+        'duration_minutes': practice_session.duration_minutes,
+        'status': practice_session.status,
+        'status_display': practice_session.get_status_display(),
+        'notes': practice_session.notes,
+        'completed_at': practice_session.completed_at.isoformat() if practice_session.completed_at else None,
+    }
+
+
 @login_required
 @require_POST
 def api_milestone_toggle(request, milestone_id):
@@ -386,6 +496,46 @@ def api_milestone_reorder(request):
         {
             'goal_id': goal.id,
             'milestones': [milestone_payload(milestone) for milestone in milestones],
+        },
+    )
+
+
+@login_required
+@require_POST
+def api_session_status(request, session_id):
+    practice_session = get_object_or_404(
+        PracticeSession.objects.select_related('goal'),
+        id=session_id,
+        user=request.user,
+    )
+
+    try:
+        payload = request_json(request)
+    except ValidationError as exc:
+        return json_error('Invalid JSON.', exc.message_dict)
+
+    new_status = payload.get('status')
+    if new_status not in SessionStatus.values:
+        return json_error(
+            'Validation failed.',
+            {'status': ['Unsupported session status.']},
+        )
+
+    practice_session.status = new_status
+    practice_session.completed_at = timezone.now() if new_status == SessionStatus.COMPLETED else None
+    practice_session.full_clean()
+    practice_session.save(update_fields=['status', 'completed_at', 'updated_at'])
+    dashboard_summary = dashboard_session_summary(request.user)
+
+    return json_success(
+        'Practice session updated.',
+        {
+            'session': session_payload(practice_session),
+            'goal_progress': calculate_goal_progress(practice_session.goal),
+            'dashboard_summary': {
+                'upcoming_sessions_count': dashboard_summary['upcoming_sessions_count'],
+                'completed_sessions_count': dashboard_summary['completed_sessions_count'],
+            },
         },
     )
 

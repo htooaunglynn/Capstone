@@ -1,0 +1,16 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Delete practice session | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">{{ goal.title }}</p>
+    <h1>Delete practice session?</h1>
+    <p>This removes the session scheduled for {{ practice_session.scheduled_for|date:"M j, Y, g:i A" }}.</p>
+    <form method="post" class="actions">
+      {% csrf_token %}
+      <button class="button-danger" type="submit">Delete session</button>
+      <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">Cancel</a>
+    </form>
+  </section>
+{% endblock %}

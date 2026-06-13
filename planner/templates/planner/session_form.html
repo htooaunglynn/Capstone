@@ -1,0 +1,56 @@
+{% extends "planner/base.html" %}
+
+{% block title %}{{ title }} | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">{% if goal %}{{ goal.title }}{% else %}Practice session{% endif %}</p>
+    <h1>{{ title }}</h1>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-field">
+        <label for="{{ form.goal.id_for_label }}">Goal</label>
+        {{ form.goal }}
+        {{ form.goal.errors }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.milestone.id_for_label }}">Milestone</label>
+        {{ form.milestone }}
+        {{ form.milestone.errors }}
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="{{ form.scheduled_for.id_for_label }}">Scheduled for</label>
+          {{ form.scheduled_for }}
+          {{ form.scheduled_for.errors }}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.duration_minutes.id_for_label }}">Duration minutes</label>
+          {{ form.duration_minutes }}
+          {{ form.duration_minutes.errors }}
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="{{ form.status.id_for_label }}">Status</label>
+        {{ form.status }}
+        {{ form.status.errors }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.notes.id_for_label }}">Notes</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+      </div>
+      <div class="actions">
+        <button type="submit">{{ submit_label }}</button>
+        {% if goal %}
+          <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">Cancel</a>
+        {% else %}
+          <a class="button button-secondary" href="{% url 'session_list' %}">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+{% endblock %}
