@@ -16,6 +16,35 @@
   </section>
 
   <section class="panel full-panel">
+    <form class="filter-form" method="get">
+      <div class="form-field">
+        <label for="session-search">Search</label>
+        <input id="session-search" type="search" name="q" value="{{ search_query }}" placeholder="Goal, milestone, or notes">
+      </div>
+      <div class="form-field">
+        <label for="session-status">Status</label>
+        <select id="session-status" name="status">
+          <option value="">Any status</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="session-range">Date range</label>
+        <select id="session-range" name="range">
+          <option value="">All dates</option>
+          <option value="upcoming"{% if date_range == "upcoming" %} selected{% endif %}>Upcoming</option>
+          <option value="week"{% if date_range == "week" %} selected{% endif %}>Next 7 days</option>
+          <option value="past"{% if date_range == "past" %} selected{% endif %}>Past</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit">Apply</button>
+        <a class="button button-secondary" href="{% url 'session_list' %}">Reset</a>
+      </div>
+    </form>
+
     {% if sessions %}
       <ul class="session-list">
         {% for session in sessions %}
@@ -51,7 +80,7 @@
       <div class="error-state session-error" data-session-error hidden></div>
     {% else %}
       <div class="empty-state">
-        No practice sessions yet.
+        No practice sessions match this view.
         <a href="{% url 'session_create' %}">Schedule one</a>.
       </div>
     {% endif %}
@@ -59,5 +88,6 @@
 {% endblock %}
 
 {% block scripts %}
+  <script src="{% static 'planner/js/api.js' %}" defer></script>
   <script src="{% static 'planner/js/dashboard.js' %}" defer></script>
 {% endblock %}

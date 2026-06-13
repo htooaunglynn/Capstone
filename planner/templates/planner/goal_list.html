@@ -36,6 +36,15 @@
           {% endfor %}
         </select>
       </div>
+      <div class="form-field">
+        <label for="goal-category">Category</label>
+        <select id="goal-category" name="category">
+          <option value="">Any category</option>
+          {% for category in category_choices %}
+            <option value="{{ category }}"{% if category_filter == category %} selected{% endif %}>{{ category }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="filter-actions">
         <button type="submit">Apply</button>
         <a class="button button-secondary" href="{% url 'goal_list' %}">Reset</a>

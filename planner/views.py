@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -6,14 +7,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from rest_framework import permissions, status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .api import api_error, api_success, json_error, json_success
 from .forms import GoalForm, MilestoneForm, PracticeSessionForm, ProgressNoteForm, RegisterForm
 from .models import Goal, GoalStatus, Milestone, PracticeSession, Priority, ProgressNote, SessionStatus
 from .serializers import (
@@ -74,9 +74,17 @@ def dashboard(request):
 @login_required
 def goal_list(request):
     goals = Goal.objects.filter(user=request.user)
+    category_choices = (
+        goals
+        .exclude(category='')
+        .order_by('category')
+        .values_list('category', flat=True)
+        .distinct()
+    )
     search_query = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '').strip()
     priority_filter = request.GET.get('priority', '').strip()
+    category_filter = request.GET.get('category', '').strip()
 
     if search_query:
         goals = goals.filter(
@@ -91,11 +99,16 @@ def goal_list(request):
     if priority_filter in Priority.values:
         goals = goals.filter(priority=priority_filter)
 
+    if category_filter and category_filter in category_choices:
+        goals = goals.filter(category=category_filter)
+
     context = {
         'goals': goals,
         'search_query': search_query,
         'status_filter': status_filter,
         'priority_filter': priority_filter,
+        'category_filter': category_filter,
+        'category_choices': category_choices,
         'status_choices': GoalStatus.choices,
         'priority_choices': Priority.choices,
     }
@@ -197,13 +210,45 @@ def milestone_delete(request, milestone_id):
 
 @login_required
 def session_list(request):
+    now = timezone.now()
     sessions = (
         PracticeSession.objects
         .select_related('goal', 'milestone')
         .filter(user=request.user)
         .order_by('scheduled_for')
     )
-    return render(request, 'planner/session_list.html', {'sessions': sessions})
+    search_query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    date_range = request.GET.get('range', '').strip()
+
+    if search_query:
+        sessions = sessions.filter(
+            Q(goal__title__icontains=search_query)
+            | Q(milestone__title__icontains=search_query)
+            | Q(notes__icontains=search_query)
+        )
+
+    if status_filter in SessionStatus.values:
+        sessions = sessions.filter(status=status_filter)
+
+    if date_range == 'upcoming':
+        sessions = sessions.filter(scheduled_for__gte=now)
+    elif date_range == 'past':
+        sessions = sessions.filter(scheduled_for__lt=now)
+    elif date_range == 'week':
+        sessions = sessions.filter(scheduled_for__gte=now, scheduled_for__lt=now + timedelta(days=7))
+
+    return render(
+        request,
+        'planner/session_list.html',
+        {
+            'sessions': sessions,
+            'search_query': search_query,
+            'status_filter': status_filter,
+            'date_range': date_range,
+            'status_choices': SessionStatus.choices,
+        },
+    )
 
 
 @login_required
@@ -299,7 +344,30 @@ def progress_note_list(request):
         .filter(user=request.user)
         .order_by('-created_at')
     )
-    return render(request, 'planner/progress_log.html', {'notes': notes})
+    goals = Goal.objects.filter(user=request.user).order_by('title')
+    search_query = request.GET.get('q', '').strip()
+    goal_filter = request.GET.get('goal', '').strip()
+
+    if search_query:
+        notes = notes.filter(
+            Q(body__icontains=search_query)
+            | Q(goal__title__icontains=search_query)
+            | Q(milestone__title__icontains=search_query)
+        )
+
+    if goal_filter.isdigit() and goals.filter(id=int(goal_filter)).exists():
+        notes = notes.filter(goal_id=int(goal_filter))
+
+    return render(
+        request,
+        'planner/progress_log.html',
+        {
+            'notes': notes,
+            'goals': goals,
+            'search_query': search_query,
+            'goal_filter': goal_filter,
+        },
+    )
 
 
 @login_required
@@ -442,50 +510,6 @@ def goal_delete(request, goal_id):
         return redirect('goal_list')
 
     return render(request, 'planner/goal_confirm_delete.html', {'goal': goal})
-
-
-def api_success(message, data=None, response_status=status.HTTP_200_OK):
-    return Response(
-        {
-            'ok': True,
-            'message': message,
-            'data': data or {},
-        },
-        status=response_status,
-    )
-
-
-def api_error(message, errors=None, response_status=status.HTTP_400_BAD_REQUEST):
-    return Response(
-        {
-            'ok': False,
-            'message': message,
-            'errors': errors or {},
-        },
-        status=response_status,
-    )
-
-
-def json_success(message, data=None, response_status=200):
-    return JsonResponse(
-        {
-            'ok': True,
-            'message': message,
-            'data': data or {},
-        },
-        status=response_status,
-    )
-
-
-def json_error(message, errors=None, response_status=400):
-    return JsonResponse(
-        {
-            'ok': False,
-            'message': message,
-            'errors': errors or {},
-        },
-        status=response_status,
-    )
 
 
 def request_json(request):

@@ -15,6 +15,26 @@
   </section>
 
   <section class="panel full-panel">
+    <form class="filter-form compact-filter-form" method="get">
+      <div class="form-field">
+        <label for="note-search">Search</label>
+        <input id="note-search" type="search" name="q" value="{{ search_query }}" placeholder="Note, goal, or milestone">
+      </div>
+      <div class="form-field">
+        <label for="note-goal">Goal</label>
+        <select id="note-goal" name="goal">
+          <option value="">Any goal</option>
+          {% for goal in goals %}
+            <option value="{{ goal.id }}"{% if goal_filter == goal.id|stringformat:"s" %} selected{% endif %}>{{ goal.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit">Apply</button>
+        <a class="button button-secondary" href="{% url 'progress_note_list' %}">Reset</a>
+      </div>
+    </form>
+
     {% if notes %}
       <ul class="note-list">
         {% for note in notes %}
@@ -36,7 +56,7 @@
         {% endfor %}
       </ul>
     {% else %}
-      <div class="empty-state">No progress notes yet.</div>
+      <div class="empty-state">No progress notes match this view.</div>
     {% endif %}
   </section>
 {% endblock %}

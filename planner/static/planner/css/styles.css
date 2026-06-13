@@ -412,8 +412,13 @@ p {
 .filter-form {
   display: grid;
   align-items: end;
-  grid-template-columns: minmax(16rem, 1fr) minmax(10rem, 13rem) minmax(10rem, 13rem) auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.compact-filter-form {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
 }
 
 .filter-actions {
@@ -767,6 +772,7 @@ p {
 
   .page-header,
   .filter-form,
+  .compact-filter-form,
   .form-grid,
   .section-heading {
     grid-template-columns: 1fr;

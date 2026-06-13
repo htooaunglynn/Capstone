@@ -58,6 +58,23 @@ class ProgressNoteCrudTests(TestCase):
         self.assertContains(response, self.note.body)
         self.assertNotContains(response, self.other_note.body)
 
+    def test_note_list_filters_by_search_and_goal(self):
+        second_goal = Goal.objects.create(user=self.user, title='Learn APIs')
+        second_note = ProgressNote.objects.create(
+            user=self.user,
+            goal=second_goal,
+            body='JWT refresh needs careful testing.',
+        )
+        self.client.force_login(self.user)
+
+        search_response = self.client.get(reverse('progress_note_list'), {'q': 'JWT'})
+        goal_response = self.client.get(reverse('progress_note_list'), {'goal': self.goal.id})
+
+        self.assertContains(search_response, second_note.body)
+        self.assertNotContains(search_response, self.note.body)
+        self.assertContains(goal_response, self.note.body)
+        self.assertNotContains(goal_response, second_note.body)
+
     def test_user_can_create_note_for_own_goal(self):
         self.client.force_login(self.user)
 

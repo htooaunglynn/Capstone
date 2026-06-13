@@ -41,7 +41,7 @@ class GoalCrudTests(TestCase):
         self.assertContains(response, self.goal.title)
         self.assertNotContains(response, self.other_goal.title)
 
-    def test_goal_list_supports_search_status_and_priority_filters(self):
+    def test_goal_list_supports_search_status_priority_and_category_filters(self):
         Goal.objects.create(
             user=self.user,
             title='Learn Python Testing',
@@ -53,11 +53,17 @@ class GoalCrudTests(TestCase):
 
         response = self.client.get(
             reverse('goal_list'),
-            {'q': 'django', 'status': GoalStatus.ACTIVE, 'priority': Priority.HIGH},
+            {
+                'q': 'django',
+                'status': GoalStatus.ACTIVE,
+                'priority': Priority.HIGH,
+                'category': 'Django',
+            },
         )
 
         self.assertContains(response, self.goal.title)
         self.assertNotContains(response, 'Learn Python Testing')
+        self.assertNotContains(response, self.other_goal.category)
 
     def test_goal_detail_is_user_scoped(self):
         self.client.force_login(self.user)

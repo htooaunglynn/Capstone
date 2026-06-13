@@ -1,17 +1,3 @@
-function getCookie(name) {
-  const cookies = document.cookie ? document.cookie.split(";") : [];
-  const prefix = `${name}=`;
-
-  for (const cookie of cookies) {
-    const trimmed = cookie.trim();
-    if (trimmed.startsWith(prefix)) {
-      return decodeURIComponent(trimmed.slice(prefix.length));
-    }
-  }
-
-  return "";
-}
-
 function showMilestoneError(message) {
   const error = document.querySelector("[data-milestone-error]");
   if (!error) {
@@ -80,21 +66,9 @@ function updateMilestoneState(item, milestone) {
 }
 
 async function postJson(url, payload) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
-    body: JSON.stringify(payload),
+  return window.SkillSprintApi.postJson(url, payload, {
+    fallbackMessage: "The milestone update failed.",
   });
-  const body = await response.json();
-
-  if (!response.ok || !body.ok) {
-    throw new Error(body.message || "The milestone update failed.");
-  }
-
-  return body.data;
 }
 
 function milestoneIds(list) {

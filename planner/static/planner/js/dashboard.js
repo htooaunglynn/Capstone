@@ -1,17 +1,3 @@
-function getCookie(name) {
-  const cookies = document.cookie ? document.cookie.split(";") : [];
-  const prefix = `${name}=`;
-
-  for (const cookie of cookies) {
-    const trimmed = cookie.trim();
-    if (trimmed.startsWith(prefix)) {
-      return decodeURIComponent(trimmed.slice(prefix.length));
-    }
-  }
-
-  return "";
-}
-
 function showSessionError(message) {
   const error = document.querySelector("[data-session-error]");
   if (!error) {
@@ -33,21 +19,9 @@ function clearSessionError() {
 }
 
 async function postSessionStatus(url, status) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
-    body: JSON.stringify({ status }),
+  return window.SkillSprintApi.postJson(url, { status }, {
+    fallbackMessage: "The session update failed.",
   });
-  const body = await response.json();
-
-  if (!response.ok || !body.ok) {
-    throw new Error(body.message || "The session update failed.");
-  }
-
-  return body.data;
 }
 
 function updateDashboardCounts(summary) {
@@ -104,19 +78,10 @@ function clearDashboardError() {
 }
 
 async function fetchDashboardSummary(url) {
-  const response = await fetch(url, {
-    headers: {
-      "Accept": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
+  const data = await window.SkillSprintApi.getJson(url, {
+    fallbackMessage: "The dashboard refresh failed.",
   });
-  const body = await response.json();
-
-  if (!response.ok || !body.ok) {
-    throw new Error(body.message || "The dashboard refresh failed.");
-  }
-
-  return body.data.summary;
+  return data.summary;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

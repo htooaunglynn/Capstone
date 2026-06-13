@@ -50,6 +50,28 @@ class PracticeSessionCrudTests(TestCase):
         self.assertContains(response, self.goal.title)
         self.assertNotContains(response, self.other_goal.title)
 
+    def test_session_list_filters_by_search_status_and_date_range(self):
+        self.client.force_login(self.user)
+        PracticeSession.objects.create(
+            user=self.user,
+            goal=self.goal,
+            scheduled_for=timezone.now() - timedelta(days=3),
+            duration_minutes=30,
+            status=SessionStatus.COMPLETED,
+            notes='Older completed review.',
+        )
+
+        search_response = self.client.get(reverse('session_list'), {'q': 'ModelForms'})
+        status_response = self.client.get(reverse('session_list'), {'status': SessionStatus.COMPLETED})
+        upcoming_response = self.client.get(reverse('session_list'), {'range': 'upcoming'})
+
+        self.assertContains(search_response, self.goal.title)
+        self.assertEqual(list(status_response.context['sessions']), list(
+            PracticeSession.objects.filter(user=self.user, status=SessionStatus.COMPLETED)
+        ))
+        self.assertContains(upcoming_response, self.goal.title)
+        self.assertNotContains(upcoming_response, 'Older completed review.')
+
     def test_user_can_create_session_for_own_goal(self):
         self.client.force_login(self.user)
         scheduled_for = timezone.now() + timedelta(days=2)
