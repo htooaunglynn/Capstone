@@ -1,0 +1,42 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Progress notes | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="page-header">
+    <div>
+      <p class="eyebrow">Progress notes</p>
+      <h1>Learning log</h1>
+      <p>Recent reflections, blockers, and study wins across your goals.</p>
+    </div>
+    <div class="actions">
+      <a class="button" href="{% url 'progress_note_create' %}">Add note</a>
+    </div>
+  </section>
+
+  <section class="panel full-panel">
+    {% if notes %}
+      <ul class="note-list">
+        {% for note in notes %}
+          <li class="note-item">
+            <div>
+              <h2><a href="{% url 'goal_detail' note.goal.id %}">{{ note.goal.title }}</a></h2>
+              <p>{{ note.body }}</p>
+              <p class="muted">
+                {{ note.created_at|date:"M j, Y, g:i A" }}
+                {% if note.milestone %} &middot; {{ note.milestone.title }}{% endif %}
+                {% if note.session %} &middot; {{ note.session.scheduled_for|date:"M j, g:i A" }}{% endif %}
+              </p>
+            </div>
+            <div class="note-actions">
+              <a class="button button-secondary" href="{% url 'progress_note_edit' note.id %}">Edit</a>
+              <a class="button button-danger" href="{% url 'progress_note_delete' note.id %}">Delete</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">No progress notes yet.</div>
+    {% endif %}
+  </section>
+{% endblock %}

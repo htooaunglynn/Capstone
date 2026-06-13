@@ -1,0 +1,16 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Delete progress note | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">{{ goal.title }}</p>
+    <h1>Delete progress note?</h1>
+    <p>{{ progress_note.body|truncatewords:24 }}</p>
+    <form method="post" class="actions">
+      {% csrf_token %}
+      <button class="button-danger" type="submit">Delete note</button>
+      <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">Cancel</a>
+    </form>
+  </section>
+{% endblock %}

@@ -8,12 +8,40 @@
     <div>
       <p class="eyebrow">Dashboard</p>
       <h1>Learning overview</h1>
-      <p>Your active goals and next practice sessions.</p>
+      <p>Your active goals, next practice sessions, overdue milestones, and recent notes.</p>
     </div>
     <div class="actions">
       <a class="button" href="{% url 'goal_create' %}">Add goal</a>
       <a class="button button-secondary" href="{% url 'session_create' %}">Add session</a>
+      <a class="button button-secondary" href="{% url 'progress_note_create' %}">Add note</a>
     </div>
+  </section>
+
+  <section class="panel full-panel dashboard-filter-panel">
+    <form class="filter-form" method="get" data-dashboard-filter-form data-summary-url="{% url 'api_dashboard_summary' %}">
+      <div class="form-field">
+        <label for="status">Goal status</label>
+        <select id="status" name="status">
+          <option value="">Any status</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="range">Date range</label>
+        <select id="range" name="range">
+          <option value="">All upcoming</option>
+          <option value="week"{% if date_range == "week" %} selected{% endif %}>Next 7 days</option>
+          <option value="month"{% if date_range == "month" %} selected{% endif %}>Next 30 days</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit">Apply</button>
+        <a class="button button-secondary" href="{% url 'dashboard' %}">Reset</a>
+      </div>
+    </form>
+    <div class="error-state dashboard-error" data-dashboard-error hidden></div>
   </section>
 
   <section class="dashboard-grid" aria-label="Dashboard summary">
@@ -31,7 +59,19 @@
     </article>
     <article class="card summary-card">
       <span class="muted">Overdue milestones</span>
-      <strong>{{ overdue_milestones_count }}</strong>
+      <strong data-overdue-milestones-count>{{ overdue_milestones_count }}</strong>
+    </article>
+    <article class="card summary-card">
+      <span class="muted">Recent notes</span>
+      <strong data-recent-notes-count>{{ recent_notes_count }}</strong>
+    </article>
+    <article class="card summary-card">
+      <span class="muted">Milestones complete</span>
+      <strong data-milestone-completion>{{ milestone_completion_percentage }}%</strong>
+    </article>
+    <article class="card summary-card">
+      <span class="muted">Sessions complete</span>
+      <strong data-session-completion>{{ session_completion_percentage }}%</strong>
     </article>
   </section>
 
@@ -85,6 +125,47 @@
         </ul>
       {% else %}
         <div class="empty-state">No active goals yet.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full-panel">
+      <h2>Overdue milestones</h2>
+      {% if overdue_milestones %}
+        <ul class="item-list">
+          {% for milestone in overdue_milestones %}
+            <li>
+              <a href="{% url 'goal_detail' milestone.goal.id %}">{{ milestone.title }}</a>
+              &middot; {{ milestone.goal.title }} &middot; Due {{ milestone.due_date }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">No overdue milestones.</div>
+      {% endif %}
+    </article>
+
+    <article class="panel full-panel">
+      <div class="section-heading">
+        <h2>Recent progress notes</h2>
+        <a class="button button-secondary" href="{% url 'progress_note_list' %}">View all</a>
+      </div>
+      {% if recent_notes %}
+        <ul class="note-list" data-recent-notes-list>
+          {% for note in recent_notes %}
+            <li class="note-item">
+              <div>
+                <h3><a href="{% url 'goal_detail' note.goal.id %}">{{ note.goal.title }}</a></h3>
+                <p>{{ note.body|truncatewords:26 }}</p>
+                <p class="muted">{{ note.created_at|date:"M j, Y, g:i A" }}</p>
+              </div>
+              <div class="note-actions">
+                <a class="button button-secondary" href="{% url 'progress_note_edit' note.id %}">Edit</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">No progress notes yet.</div>
       {% endif %}
     </article>
   </section>

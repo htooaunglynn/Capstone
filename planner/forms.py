@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import Goal, Milestone, PracticeSession
+from .models import Goal, Milestone, PracticeSession, ProgressNote
 
 
 User = get_user_model()
@@ -87,5 +87,76 @@ class PracticeSessionForm(forms.ModelForm):
 
         if milestone and goal and milestone.goal_id != goal.id:
             self.add_error('milestone', 'Select a milestone from the chosen goal.')
+
+        return cleaned_data
+
+
+class ProgressNoteForm(forms.ModelForm):
+    class Meta:
+        model = ProgressNote
+        fields = ['goal', 'milestone', 'session', 'body']
+        widgets = {
+            'body': forms.Textarea(attrs={'rows': 5}),
+        }
+
+    def __init__(self, *args, user=None, goal=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.fixed_goal = goal
+
+        goals = Goal.objects.none()
+        milestones = Milestone.objects.none()
+        sessions = PracticeSession.objects.none()
+
+        if user is not None:
+            goals = Goal.objects.filter(user=user)
+            milestones = Milestone.objects.filter(goal__user=user)
+            sessions = PracticeSession.objects.filter(user=user)
+
+        if goal is not None:
+            goals = goals.filter(id=goal.id)
+            milestones = goal.milestones.all()
+            sessions = goal.practice_sessions.all()
+            self.fields['goal'].initial = goal
+            self.fields['goal'].disabled = True
+
+        if self.instance.pk and self.instance.goal_id:
+            milestones = Milestone.objects.filter(goal=self.instance.goal)
+            sessions = PracticeSession.objects.filter(goal=self.instance.goal, user=self.user)
+
+        self.fields['goal'].queryset = goals
+        self.fields['milestone'].queryset = milestones
+        self.fields['session'].queryset = sessions
+        self.fields['milestone'].required = False
+        self.fields['session'].required = False
+
+    def clean_goal(self):
+        if self.fixed_goal is not None:
+            return self.fixed_goal
+        return self.cleaned_data['goal']
+
+    def clean_body(self):
+        body = self.cleaned_data['body'].strip()
+        if not body:
+            raise forms.ValidationError('Progress note body cannot be empty.')
+        return body
+
+    def clean(self):
+        cleaned_data = super().clean()
+        goal = cleaned_data.get('goal')
+        milestone = cleaned_data.get('milestone')
+        session = cleaned_data.get('session')
+
+        if goal and self.user and goal.user_id != self.user.id:
+            self.add_error('goal', 'Select one of your goals.')
+
+        if milestone and goal and milestone.goal_id != goal.id:
+            self.add_error('milestone', 'Select a milestone from the chosen goal.')
+
+        if session and goal and session.goal_id != goal.id:
+            self.add_error('session', 'Select a session from the chosen goal.')
+
+        if session and self.user and session.user_id != self.user.id:
+            self.add_error('session', 'Select one of your sessions.')
 
         return cleaned_data

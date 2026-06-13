@@ -17,6 +17,7 @@
           <a href="{% url 'dashboard' %}">Dashboard</a>
           <a href="{% url 'goal_list' %}">Goals</a>
           <a href="{% url 'session_list' %}">Sessions</a>
+          <a href="{% url 'progress_note_list' %}">Notes</a>
           <span class="nav-user" aria-label="Signed in user">{{ user.username }}</span>
           <form class="nav-form" method="post" action="{% url 'logout' %}">
             {% csrf_token %}

@@ -1,0 +1,44 @@
+{% extends "planner/base.html" %}
+
+{% block title %}{{ title }} | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">{% if goal %}{{ goal.title }}{% else %}Progress notes{% endif %}</p>
+    <h1>{{ title }}</h1>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-field">
+        <label for="{{ form.goal.id_for_label }}">Goal</label>
+        {{ form.goal }}
+        {{ form.goal.errors }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.milestone.id_for_label }}">Milestone</label>
+        {{ form.milestone }}
+        {{ form.milestone.errors }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.session.id_for_label }}">Practice session</label>
+        {{ form.session }}
+        {{ form.session.errors }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.body.id_for_label }}">Note</label>
+        {{ form.body }}
+        {{ form.body.errors }}
+      </div>
+      <div class="actions">
+        <button type="submit">{{ submit_label }}</button>
+        {% if goal %}
+          <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">Cancel</a>
+        {% else %}
+          <a class="button button-secondary" href="{% url 'progress_note_list' %}">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+{% endblock %}

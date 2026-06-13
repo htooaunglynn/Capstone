@@ -14,8 +14,8 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .forms import GoalForm, MilestoneForm, PracticeSessionForm, RegisterForm
-from .models import Goal, GoalStatus, Milestone, PracticeSession, Priority, SessionStatus
+from .forms import GoalForm, MilestoneForm, PracticeSessionForm, ProgressNoteForm, RegisterForm
+from .models import Goal, GoalStatus, Milestone, PracticeSession, Priority, ProgressNote, SessionStatus
 from .serializers import (
     LoginSerializer,
     LogoutSerializer,
@@ -25,7 +25,7 @@ from .serializers import (
     token_payload,
     user_payload,
 )
-from .services import calculate_goal_progress, dashboard_session_summary
+from .services import calculate_goal_progress, dashboard_session_summary, dashboard_summary_payload
 
 
 def landing(request):
@@ -63,7 +63,12 @@ def logout_page(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'planner/dashboard.html', dashboard_session_summary(request.user))
+    context = dashboard_session_summary(
+        request.user,
+        status_filter=request.GET.get('status', '').strip(),
+        date_range=request.GET.get('range', '').strip(),
+    )
+    return render(request, 'planner/dashboard.html', context)
 
 
 @login_required
@@ -287,6 +292,102 @@ def session_delete(request, session_id):
 
 
 @login_required
+def progress_note_list(request):
+    notes = (
+        ProgressNote.objects
+        .select_related('goal', 'milestone', 'session')
+        .filter(user=request.user)
+        .order_by('-created_at')
+    )
+    return render(request, 'planner/progress_log.html', {'notes': notes})
+
+
+@login_required
+def progress_note_create(request, goal_id=None):
+    goal = None
+    if goal_id is not None:
+        goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+
+    if request.method == 'POST':
+        form = ProgressNoteForm(request.POST, user=request.user, goal=goal)
+        if form.is_valid():
+            progress_note = form.save(commit=False)
+            progress_note.user = request.user
+            progress_note.goal = form.cleaned_data['goal']
+            progress_note.full_clean()
+            progress_note.save()
+            messages.success(request, 'Progress note created.')
+            return redirect('goal_detail', goal_id=progress_note.goal_id)
+    else:
+        form = ProgressNoteForm(user=request.user, goal=goal)
+
+    return render(
+        request,
+        'planner/progress_note_form.html',
+        {
+            'form': form,
+            'goal': goal,
+            'title': 'Add progress note',
+            'submit_label': 'Add note',
+        },
+    )
+
+
+@login_required
+def progress_note_edit(request, note_id):
+    progress_note = get_object_or_404(
+        ProgressNote.objects.select_related('goal', 'milestone', 'session'),
+        id=note_id,
+        user=request.user,
+    )
+
+    if request.method == 'POST':
+        form = ProgressNoteForm(request.POST, instance=progress_note, user=request.user)
+        if form.is_valid():
+            progress_note = form.save(commit=False)
+            progress_note.user = request.user
+            progress_note.full_clean()
+            progress_note.save()
+            messages.success(request, 'Progress note updated.')
+            return redirect('goal_detail', goal_id=progress_note.goal_id)
+    else:
+        form = ProgressNoteForm(instance=progress_note, user=request.user)
+
+    return render(
+        request,
+        'planner/progress_note_form.html',
+        {
+            'form': form,
+            'goal': progress_note.goal,
+            'progress_note': progress_note,
+            'title': 'Edit progress note',
+            'submit_label': 'Save changes',
+        },
+    )
+
+
+@login_required
+def progress_note_delete(request, note_id):
+    progress_note = get_object_or_404(
+        ProgressNote.objects.select_related('goal'),
+        id=note_id,
+        user=request.user,
+    )
+    goal = progress_note.goal
+
+    if request.method == 'POST':
+        progress_note.delete()
+        messages.success(request, 'Progress note deleted.')
+        return redirect('goal_detail', goal_id=goal.id)
+
+    return render(
+        request,
+        'planner/progress_note_confirm_delete.html',
+        {'goal': goal, 'progress_note': progress_note},
+    )
+
+
+@login_required
 def goal_create(request):
     if request.method == 'POST':
         form = GoalForm(request.POST)
@@ -423,6 +524,19 @@ def session_payload(practice_session):
     }
 
 
+def note_payload(progress_note):
+    return {
+        'id': progress_note.id,
+        'goal_id': progress_note.goal_id,
+        'goal_title': progress_note.goal.title,
+        'milestone_id': progress_note.milestone_id,
+        'session_id': progress_note.session_id,
+        'body': progress_note.body,
+        'created_at': progress_note.created_at.isoformat(),
+        'updated_at': progress_note.updated_at.isoformat(),
+    }
+
+
 @login_required
 @require_POST
 def api_milestone_toggle(request, milestone_id):
@@ -536,6 +650,23 @@ def api_session_status(request, session_id):
                 'upcoming_sessions_count': dashboard_summary['upcoming_sessions_count'],
                 'completed_sessions_count': dashboard_summary['completed_sessions_count'],
             },
+        },
+    )
+
+
+@login_required
+def api_dashboard_summary(request):
+    summary = dashboard_session_summary(
+        request.user,
+        status_filter=request.GET.get('status', '').strip(),
+        date_range=request.GET.get('range', '').strip(),
+    )
+
+    return json_success(
+        'Dashboard summary loaded.',
+        {
+            'summary': dashboard_summary_payload(summary),
+            'recent_notes': [note_payload(note) for note in summary['recent_notes']],
         },
     )
 

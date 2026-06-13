@@ -15,6 +15,7 @@
       </p>
     </div>
     <div class="actions">
+      <a class="button" href="{% url 'goal_note_create' goal.id %}">Add note</a>
       <a class="button button-secondary" href="{% url 'goal_edit' goal.id %}">Edit</a>
       <a class="button button-danger" href="{% url 'goal_delete' goal.id %}">Delete</a>
     </div>
@@ -136,16 +137,32 @@
     <article class="panel full-panel">
       <div class="section-heading">
         <h2>Progress notes</h2>
-        <span class="muted">Phase 8</span>
+        <a class="button button-secondary" href="{% url 'goal_note_create' goal.id %}">Add note</a>
       </div>
       {% if goal.progress_notes.all %}
-        <ul class="item-list">
+        <ul class="note-list">
           {% for note in goal.progress_notes.all %}
-            <li>{{ note.body|truncatewords:18 }}</li>
+            <li class="note-item">
+              <div>
+                <p>{{ note.body }}</p>
+                <p class="muted">
+                  {{ note.created_at|date:"M j, Y, g:i A" }}
+                  {% if note.milestone %} &middot; {{ note.milestone.title }}{% endif %}
+                  {% if note.session %} &middot; Session {{ note.session.scheduled_for|date:"M j, g:i A" }}{% endif %}
+                </p>
+              </div>
+              <div class="note-actions">
+                <a class="button button-secondary" href="{% url 'progress_note_edit' note.id %}">Edit</a>
+                <a class="button button-danger" href="{% url 'progress_note_delete' note.id %}">Delete</a>
+              </div>
+            </li>
           {% endfor %}
         </ul>
       {% else %}
-        <div class="empty-state">Progress notes will appear here after the notes phase.</div>
+        <div class="empty-state">
+          No progress notes yet.
+          <a href="{% url 'goal_note_create' goal.id %}">Add the first note</a>.
+        </div>
       {% endif %}
     </article>
   </section>
