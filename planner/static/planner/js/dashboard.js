@@ -84,6 +84,36 @@ async function fetchDashboardSummary(url) {
   return data.summary;
 }
 
+async function fetchDashboardHtml(url) {
+  const response = await fetch(url, {
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("The dashboard refresh failed.");
+  }
+
+  return response.text();
+}
+
+function replaceDashboardSections(html) {
+  const parser = new DOMParser();
+  const nextDocument = parser.parseFromString(html, "text/html");
+  const currentSummary = document.querySelector(".dashboard-grid");
+  const nextSummary = nextDocument.querySelector(".dashboard-grid");
+  const currentSections = document.querySelector(".dashboard-sections");
+  const nextSections = nextDocument.querySelector(".dashboard-sections");
+
+  if (!currentSummary || !nextSummary || !currentSections || !nextSections) {
+    throw new Error("The dashboard refresh failed.");
+  }
+
+  currentSummary.replaceWith(nextSummary);
+  currentSections.replaceWith(nextSections);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-session-status-form]").forEach((form) => {
     form.addEventListener("submit", async (event) => {
@@ -126,17 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
       clearDashboardError();
 
       const submitButton = filterForm.querySelector("button[type='submit']");
-      const summaryUrl = filterForm.dataset.summaryUrl;
       const params = new URLSearchParams(new FormData(filterForm));
-      const url = `${summaryUrl}?${params.toString()}`;
+      const query = params.toString();
+      const url = `${window.location.pathname}${query ? `?${query}` : ""}`;
 
       submitButton?.classList.add("is-loading");
       submitButton?.setAttribute("disabled", "disabled");
 
       try {
-        const summary = await fetchDashboardSummary(url);
-        updateDashboardCounts(summary);
-        window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+        const html = await fetchDashboardHtml(url);
+        replaceDashboardSections(html);
+        window.history.replaceState(null, "", url);
       } catch (error) {
         showDashboardError(error.message);
       } finally {

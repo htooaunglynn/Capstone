@@ -13,11 +13,13 @@
       <div class="form-field">
         <label for="{{ form.username.id_for_label }}">Username</label>
         {{ form.username }}
+        <div class="helptext">Enter the username you used when creating your account.</div>
         {{ form.username.errors }}
       </div>
       <div class="form-field">
         <label for="{{ form.password.id_for_label }}">Password</label>
         {{ form.password }}
+        <div class="helptext">Passwords are case-sensitive.</div>
         {{ form.password.errors }}
       </div>
       <button type="submit">Log in</button>

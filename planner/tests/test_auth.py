@@ -8,6 +8,19 @@ User = get_user_model()
 
 
 class PageAuthTests(TestCase):
+    def test_register_page_shows_account_format_rules(self):
+        response = self.client.get(reverse('register'))
+
+        self.assertContains(response, 'Use letters, numbers, and @/./+/-/_ only')
+        self.assertContains(response, 'name@example.com')
+        self.assertContains(response, 'Your password can’t be too similar to your other personal information.')
+
+    def test_login_page_shows_login_hints(self):
+        response = self.client.get(reverse('login'))
+
+        self.assertContains(response, 'Enter the username you used when creating your account.')
+        self.assertContains(response, 'Passwords are case-sensitive.')
+
     def test_register_creates_user_logs_in_and_redirects_to_dashboard(self):
         response = self.client.post(
             reverse('register'),
