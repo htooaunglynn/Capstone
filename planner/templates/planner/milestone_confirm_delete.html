@@ -1,0 +1,16 @@
+{% extends "planner/base.html" %}
+
+{% block title %}Delete {{ milestone.title }} | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">{{ goal.title }}</p>
+    <h1>Delete {{ milestone.title }}?</h1>
+    <p>This removes the milestone from this goal. Related sessions and notes will remain available when those phases are implemented.</p>
+    <form method="post" class="actions">
+      {% csrf_token %}
+      <button class="button-danger" type="submit">Delete milestone</button>
+      <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">Cancel</a>
+    </form>
+  </section>
+{% endblock %}

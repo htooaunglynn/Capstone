@@ -1,0 +1,42 @@
+{% extends "planner/base.html" %}
+
+{% block title %}{{ title }} | SkillSprint{% endblock %}
+
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">{{ goal.title }}</p>
+    <h1>{{ title }}</h1>
+    <form method="post" class="stacked-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-field">
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+        {{ form.title.errors }}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.notes.id_for_label }}">Notes</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="{{ form.due_date.id_for_label }}">Due date</label>
+          {{ form.due_date }}
+          {{ form.due_date.errors }}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.order.id_for_label }}">Order</label>
+          {{ form.order }}
+          {{ form.order.errors }}
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit">{{ submit_label }}</button>
+        <a class="button button-secondary" href="{% url 'goal_detail' goal.id %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

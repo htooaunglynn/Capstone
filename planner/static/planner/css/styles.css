@@ -506,6 +506,70 @@ p {
   padding-left: 1.25rem;
 }
 
+.milestone-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.milestone-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: start;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-2);
+}
+
+.milestone-item.is-complete {
+  border-color: rgba(22, 163, 74, 0.34);
+  background: rgba(22, 163, 74, 0.06);
+}
+
+.milestone-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+.milestone-main h3 {
+  margin-bottom: 0.25rem;
+}
+
+.milestone-toggle-form {
+  margin: 0;
+}
+
+.milestone-check {
+  min-width: 8.5rem;
+  background: var(--color-accent);
+}
+
+.milestone-check:hover {
+  background: #15803d;
+}
+
+.milestone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+.milestone-actions .button {
+  min-height: 40px;
+  padding-inline: 0.75rem;
+}
+
+.milestone-error {
+  margin-top: var(--space-2);
+}
+
 .eyebrow {
   margin: 0 0 var(--space-1);
   color: var(--color-muted);
@@ -612,6 +676,17 @@ p {
   }
 
   .filter-actions .button {
+    width: 100%;
+  }
+
+  .milestone-item,
+  .milestone-main {
+    grid-template-columns: 1fr;
+  }
+
+  .milestone-actions,
+  .milestone-actions .button,
+  .milestone-check {
     width: 100%;
   }
 

@@ -1,4 +1,5 @@
 {% extends "planner/base.html" %}
+{% load static %}
 
 {% block title %}{{ goal.title }} | SkillSprint{% endblock %}
 
@@ -29,11 +30,11 @@
       {% endif %}
       <div class="progress-summary progress-large" aria-label="Goal progress">
         <div class="progress-bar">
-          <span style="width: {{ goal.progress_percentage }}%"></span>
+          <span data-goal-progress-bar style="width: {{ goal.progress_percentage }}%"></span>
         </div>
-        <strong>{{ goal.progress_percentage }}%</strong>
+        <strong data-goal-progress-value>{{ goal.progress_percentage }}%</strong>
       </div>
-      <p>
+      <p data-goal-progress-count>
         {{ goal.completed_milestones_count }} of {{ goal.total_milestones_count }}
         milestones complete.
       </p>
@@ -42,16 +43,47 @@
     <article class="panel full-panel">
       <div class="section-heading">
         <h2>Milestones</h2>
-        <span class="muted">Phase 6</span>
+        <a class="button button-secondary" href="{% url 'milestone_create' goal.id %}">Add milestone</a>
       </div>
       {% if goal.milestones.all %}
-        <ul class="item-list">
+        <ol class="milestone-list" data-milestone-list data-goal-id="{{ goal.id }}">
           {% for milestone in goal.milestones.all %}
-            <li>{{ milestone.title }}</li>
+            <li class="milestone-item{% if milestone.is_complete %} is-complete{% endif %}" data-milestone-id="{{ milestone.id }}">
+              <div class="milestone-main">
+                <form class="milestone-toggle-form" method="post" action="{% url 'api_milestone_toggle' milestone.id %}" data-milestone-toggle>
+                  {% csrf_token %}
+                  <input type="hidden" name="is_complete" value="{% if milestone.is_complete %}false{% else %}true{% endif %}">
+                  <button class="milestone-check" type="submit" aria-pressed="{% if milestone.is_complete %}true{% else %}false{% endif %}">
+                    {% if milestone.is_complete %}Complete{% else %}Mark complete{% endif %}
+                  </button>
+                </form>
+                <div>
+                  <h3>{{ milestone.title }}</h3>
+                  {% if milestone.notes %}
+                    <p>{{ milestone.notes }}</p>
+                  {% endif %}
+                  <p class="muted" data-milestone-meta data-due-text="{% if milestone.due_date %} &middot; Due {{ milestone.due_date }}{% endif %}">
+                    Order {{ milestone.order }}
+                    {% if milestone.due_date %} &middot; Due {{ milestone.due_date }}{% endif %}
+                    {% if milestone.completed_at %} &middot; Completed {{ milestone.completed_at|date:"M j, Y" }}{% endif %}
+                  </p>
+                </div>
+              </div>
+              <div class="milestone-actions">
+                <button class="button button-secondary" type="button" data-reorder="up" aria-label="Move {{ milestone.title }} up">Up</button>
+                <button class="button button-secondary" type="button" data-reorder="down" aria-label="Move {{ milestone.title }} down">Down</button>
+                <a class="button button-secondary" href="{% url 'milestone_edit' milestone.id %}">Edit</a>
+                <a class="button button-danger" href="{% url 'milestone_delete' milestone.id %}">Delete</a>
+              </div>
+            </li>
           {% endfor %}
-        </ul>
+        </ol>
+        <div class="error-state milestone-error" data-milestone-error hidden></div>
       {% else %}
-        <div class="empty-state">Milestones will appear here after the milestone phase.</div>
+        <div class="empty-state">
+          No milestones yet.
+          <a href="{% url 'milestone_create' goal.id %}">Add the first milestone</a>.
+        </div>
       {% endif %}
     </article>
 
@@ -87,4 +119,8 @@
       {% endif %}
     </article>
   </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'planner/js/goal_detail.js' %}" defer></script>
 {% endblock %}
