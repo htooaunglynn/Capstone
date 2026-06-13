@@ -171,16 +171,6 @@ If an admin account is needed after migrations exist, run:
 python3 manage.py createsuperuser
 ```
 
-For production-like configuration, set:
-
-```bash
-export DJANGO_SECRET_KEY="replace-with-a-long-random-secret"
-export DJANGO_DEBUG=False
-export DJANGO_ALLOWED_HOSTS="127.0.0.1,localhost,your-domain.example"
-export DJANGO_CSRF_TRUSTED_ORIGINS="https://your-domain.example"
-export DATABASE_URL="postgresql://user:password@host:5432/dbname"
-```
-
 To build the Django container after Docker can pull the base image:
 
 ```bash
@@ -192,8 +182,8 @@ docker build -t skillsprint .
 The project includes Django tests for model creation, model relationships, progress calculations, authentication redirects, CRUD behavior, permission boundaries, invalid form submissions, JSON response shapes, JWT-authenticated endpoints, and ownership checks between two different users. Run:
 
 ```bash
-python manage.py check
-python manage.py test
+python3 manage.py check
+python3 manage.py test
 ```
 
 The API tests confirm the global response shape:
