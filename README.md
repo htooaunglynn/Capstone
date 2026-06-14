@@ -34,11 +34,11 @@ The project will also be mobile-responsive. Dashboard panels, navigation, forms,
 
 ## Technology
 
-The stack is Python 3.12, Django 5.2 LTS, Django REST Framework 3.16, `djangorestframework-simplejwt` 5.5, SQLite for local capstone development, optional PostgreSQL-compatible production database configuration through `DATABASE_URL`, server-rendered Django templates, vanilla JavaScript, and CSS. Gunicorn is included for container runtime serving.
+The stack is Python 3.12, Django 5.2 LTS, Django REST Framework 3.16, `djangorestframework-simplejwt` 5.5, SQLite for local capstone development, optional PostgreSQL-compatible production database configuration through `DATABASE_URL`, server-rendered Django templates, vanilla JavaScript, and CSS. Gunicorn and WhiteNoise are included for Docker container runtime serving.
 
 Rendered pages will use Django session authentication. JSON endpoints under `/api/` will use JWT authentication. This hybrid approach keeps the project aligned with Django's strengths while still demonstrating API authentication and JavaScript interaction.
 
-Cloudflare is the planned production edge direction. The repository includes a Dockerfile, Cloudflare Containers Worker scaffold, `wrangler.toml`, and a manual GitHub Actions deploy workflow. A real deployment still requires a Cloudflare paid Workers account, production route, secrets, and managed database URL. SQLite is acceptable for local development and capstone submission, but any real production deployment should use a PostgreSQL-compatible managed database rather than a SQLite file inside a container.
+The repository includes a Dockerfile for Render deployment. SQLite is acceptable for local development and capstone submission, but any real production deployment should use a PostgreSQL-compatible managed database rather than a SQLite file inside a container.
 
 ## Project Structure
 
@@ -49,10 +49,8 @@ Capstone/
   Note.txt
   .gitignore
   requirements.txt
-  package.json
   Dockerfile
   .dockerignore
-  wrangler.toml
   manage.py
   capstone/
     __init__.py
@@ -108,23 +106,20 @@ Capstone/
           api.js
           dashboard.js
           goal_detail.js
-  cloudflare/
-    worker.js
   .github/
     workflows/
       ci.yml
-      deploy.yml
 ```
 
 ## File Descriptions
 
-`requirements.txt` pins Python dependencies for Django, Django REST Framework, Simple JWT, database URL parsing, PostgreSQL support, and Gunicorn. `package.json` pins the Cloudflare Worker deployment tooling. `.gitignore` keeps local virtual environments, caches, local databases, static build output, media files, and secrets out of version control. `manage.py` is the Django command-line entry point. The `capstone/` package contains project settings, root URLs, and WSGI/ASGI entry points. The `planner/` app contains the learning-planner domain code.
+`requirements.txt` pins Python dependencies for Django, Django REST Framework, Simple JWT, database URL parsing, PostgreSQL support, Gunicorn, and WhiteNoise. `.gitignore` keeps local virtual environments, caches, local databases, static build output, media files, and secrets out of version control. `manage.py` is the Django command-line entry point. The `capstone/` package contains project settings, root URLs, and WSGI/ASGI entry points. The `planner/` app contains the learning-planner domain code.
 
 Inside `planner/`, `models.py` defines `Goal`, `Milestone`, `PracticeSession`, and `ProgressNote`. `forms.py` validates HTML form input and protects cross-object relationships. `views.py` contains page views and API views, with all queries scoped to the current user. `api.py` centralizes global JSON response helpers. `serializers.py` handles API auth serializers and token payloads. `services.py` holds shared dashboard, progress, and query helpers. `urls.py` defines app routes. `admin.py` registers models for Django admin inspection.
 
 The `planner/tests/` package splits tests by behavior: setup, authentication, models, goals, milestones, sessions, progress notes, dashboard behavior, and API responses. Templates in `planner/templates/planner/` render the landing page, dashboard, goal pages, milestone forms, session pages, progress note pages, delete confirmations, and authentication pages. Static assets in `planner/static/planner/` contain one shared stylesheet and focused JavaScript files for API helpers, dashboard behavior, and goal detail behavior.
 
-Deployment-related files include `Dockerfile` for a Gunicorn-backed Django image, `.dockerignore` to keep local-only files and secrets out of builds, `cloudflare/worker.js` and `wrangler.toml` for Cloudflare Containers routing, `.github/workflows/ci.yml` for automated checks, and `.github/workflows/deploy.yml` for a manual Cloudflare deployment after production secrets and routes are configured.
+Deployment-related files include `Dockerfile` for a Gunicorn-backed Django image, `.dockerignore` to keep local-only files and secrets out of builds, and `.github/workflows/ci.yml` for automated checks.
 
 ## How to Run
 
@@ -177,6 +172,14 @@ To build the Django container after Docker can pull the base image:
 docker build -t skillsprint .
 ```
 
+For Render, create a Docker web service from this repository. The container listens on port `8000`, and Render can detect that exposed HTTP port. Set production environment variables such as:
+
+```text
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=<long random secret>
+DATABASE_URL=<managed postgres url, optional but recommended>
+```
+
 ## Testing
 
 The project includes Django tests for model creation, model relationships, progress calculations, authentication redirects, CRUD behavior, permission boundaries, invalid form submissions, JSON response shapes, JWT-authenticated endpoints, and ownership checks between two different users. Run:
@@ -214,10 +217,8 @@ SkillSprint stores private learning data, so user ownership is a core requiremen
 
 Server-side validation is the source of truth. Django forms, model validation, and DRF serializers must reject invalid relationships such as connecting a session to a milestone from another goal. JavaScript may make the interface smoother, but it must not replace backend authorization or validation.
 
-Production settings should use environment variables for secrets, debug mode, allowed hosts, CSRF trusted origins, database configuration, and Cloudflare credentials. Production should run with `DEBUG=False`, HTTPS, secure cookies, HTTP-only session cookies, pinned dependencies, refresh token rotation, and refresh token blacklisting on logout.
+Production settings should use environment variables for secrets, debug mode, allowed hosts, CSRF trusted origins, and database configuration. Production should run with `DEBUG=False`, HTTPS, secure cookies, HTTP-only session cookies, pinned dependencies, refresh token rotation, and refresh token blacklisting on logout.
 
 ## Additional Information
 
 The local final review passed `python manage.py check`, `python manage.py check --deploy` with production-style environment variables, `python manage.py test`, `python manage.py migrate --noinput` against a clean SQLite database, and `python manage.py collectstatic --noinput`. Dockerfile verification was attempted, but the local Docker registry pull stalled while downloading the base image; the app-level collectstatic step used by the Dockerfile was verified separately.
-
-Cloudflare deployment files are included as scaffolding. Before a real deployment, configure the production route in `wrangler.toml`, add GitHub Actions secrets for `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, and `DATABASE_URL`, and confirm the Cloudflare zone SSL/TLS, WAF, caching, and managed database settings.
