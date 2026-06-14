@@ -14,9 +14,11 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 RUN python manage.py collectstatic --noinput
+RUN chmod +x /app/entrypoint.sh
 
 USER app
 
 EXPOSE 8000
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["gunicorn", "capstone.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "60"]

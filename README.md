@@ -172,7 +172,7 @@ To build the Django container after Docker can pull the base image:
 docker build -t skillsprint .
 ```
 
-For Render, create a Docker web service from this repository. The container listens on port `8000`, and Render can detect that exposed HTTP port. Set production environment variables such as:
+For Render, create a Docker web service from this repository. The container listens on port `8000`, runs database migrations on startup, and Render can detect the exposed HTTP port. Set production environment variables such as:
 
 ```text
 DJANGO_DEBUG=False
